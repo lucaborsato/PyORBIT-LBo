@@ -620,7 +620,7 @@ def pyorbit_getresults(config_in, sampler_name, plot_dictionary):
         print()
         """
         Gelman-Rubin traces are stored in the dedicated folder iniside the _plot folder
-        Note that the GR statistics is not robust because the wlakers are not independent 
+        Note that the GR statistics is not robust because the walkers are not independent 
         """
         os.system('mkdir -p ' + dir_output + 'gr_traces')
 

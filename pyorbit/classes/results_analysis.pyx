@@ -107,8 +107,12 @@ def results_resumen(mc, theta,
             logchi2_collection = np.zeros(n_samples)
             for i in range(0, n_samples):
                 logchi2_collection[i] = mc(theta[i, :])
-            perc0, perc1, perc2 = np.percentile(
-                logchi2_collection, [15.865, 50, 84.135], axis=0)
+            # --- 2021-02-25 LBo
+            # perc0, perc1, perc2 = np.percentile(
+            #     logchi2_collection, [15.865, 50, 84.135], axis=0)
+            perc0 = np.percentile(logchi2_collection, 50, axis=0)
+            perc1, perc2 = hpd(logchi2_collection, cred=0.6827)
+            # ---
             print(' LN probability: %12f   %12f %12f (15-84 p) ' %
                   (perc1, perc0 - perc1, perc2 - perc1))
         else:
@@ -631,12 +635,20 @@ def print_dictionary(variable_values, recenter=[]):
                 var_vals_recentered = var_vals.copy()
                 var_vals_recentered[move_back] -= recenter[var_names][1]
                 var_vals_recentered[move_forw] += recenter[var_names][1]
-                perc0, perc1, perc2 = np.percentile(
-                    var_vals_recentered, [15.865, 50, 84.135], axis=0)
+                # --- 2021-02-25 LBo
+                # perc0, perc1, perc2 = np.percentile(
+                #     var_vals_recentered, [15.865, 50, 84.135], axis=0)
+                perc0 = np.percentile(var_vals_recentered, 50, axis=0)
+                perc1, perc2 = hpd(var_vals_recentered, cred=0.6827)
+                # ---
 
             else:
-                perc0, perc1, perc2 = np.percentile(
-                    var_vals, [15.865, 50, 84.135], axis=0)
+                # --- 2021-02-25 LBo
+                # perc0, perc1, perc2 = np.percentile(
+                #     var_vals, [15.865, 50, 84.135], axis=0)
+                perc0 = np.percentile(var_vals, 50, axis=0)
+                perc1, perc2 = hpd(var_vals, cred=0.6827)
+                # ---
 
             if np.abs(perc1) < format_boundary or \
                     np.abs(perc0 - perc1) < format_boundary or \
@@ -785,3 +797,58 @@ PyORBIT should keep running for at least {0:9.0f} more steps to reach 100*ACF"""
         print(
             "They should be at least {0:d}*nthin = {1:d}".format(50*acf_len, 50*acf_len*nthin))
         print()
+
+# --- 2021-02-25 LBo
+# ==============================================================================
+# COMPUTES THE HDI/HPD FROM PYASTRONOMY
+# ==============================================================================
+def hpd(trace, cred=0.6827):
+    """
+    Estimate the highest probability density interval.
+
+    This function determines the shortest, continuous interval
+    containing the specified fraction (cred) of steps of
+    the Markov chain. Note that multi-modal distribution
+    may require further scrutiny.
+
+    Parameters
+    ----------
+    trace : array
+        The steps of the Markov chain.
+    cred : float
+        The probability mass to be included in the
+        interval (between 0 and 1).
+        1\sigma = 0.6827
+        2\sigma = 0.9544
+        3\sigma = 0.9974
+
+    Returns
+    -------
+    start, end : float
+        The start and end points of the interval.
+    """
+    cred_def = 0.6827
+    if (cred > 1.0) or (cred < 0.0):
+        print('CRED HAS TO BE: 0 < cred < 1 ==> setting to cred = {}'.format(cred_def))
+        cred = cred_def
+
+    # Sort the trace steps in ascending order
+    st = np.sort(trace)
+
+    # Number of steps in the chain
+    n = len(st)
+    # Number of steps to be included in the interval
+    nin = int(n * cred)
+
+    # All potential intervals must be 1) continuous and 2) cover
+    # the given number of trace steps. Potential start and end
+    # points of the HPD are given by
+    starts = st[0:-nin]
+    ends = st[nin:]
+    # All possible widths are
+    widths = ends - starts
+    # The density is highest in the shortest one
+    imin = np.argmin(widths)
+
+    return starts[imin], ends[imin]
+# ---
