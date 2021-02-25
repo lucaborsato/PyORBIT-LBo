@@ -41,8 +41,14 @@ def pyorbit_getresults(config_in, sampler_name, plot_dictionary):
     if plot_dictionary['use_getdist']:
         from getdist import plots, MCSamples
 
-    # plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern Roman']})
-    plt.rcParams["font.family"] = "Times New Roman"
+    # # plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern Roman']})
+    # plt.rcParams["font.family"] = "Times New Roman"
+
+    # --- 2021-02-25 LBo
+    plt.rcParams['font.family']       = 'serif'
+    plt.rcParams['font.serif']        = ['Computer Modern Roman', 'Palatino', 'DejaVu Serif']
+    plt.rcParams['mathtext.fontset']  = 'cm'
+    # --- 
     plt.rc('text', usetex=use_tex)
 
     if sampler_name == 'emcee':
